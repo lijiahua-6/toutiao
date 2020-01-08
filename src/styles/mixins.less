@@ -1,0 +1,11 @@
+//公共的 mixin 样式代码
+//重复内容封装一下
+.bordered {
+    border-top: dotted 1px black;
+    border-bottom: solid 1px red;
+}
+
+#menu a {
+    // mixin 混入，调用/复制了一份
+    .bordered()
+}
