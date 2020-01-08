@@ -4,7 +4,7 @@ import axios from 'axios'
 import jsonBig from 'json-bigint'
 
 // axios.create 方法：复制一个 axios
-const request = axios.creaye({
+const request = axios.create({
   baseURL: 'http://ttapi.research.itcast.cn/' // 基础路径
 })
 

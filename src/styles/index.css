@@ -1,3 +1,6 @@
-body {
-  color: red;
+body .van-nav-bar {
+  background-color: #3196fa;
+}
+body .van-nav-bar .van-nav-bar__title {
+  color: #fff;
 }
