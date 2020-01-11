@@ -4,30 +4,51 @@
     <van-nav-bar title="标题" />
 
     <!-- 登录菜单 -->
-    <van-cell-group>
-      <!-- 绑定数据 -->
-      <van-field
-        v-model="user.mobile"
-        class="iconfont icon-smartphone"
-        clearable
-        label="手机号"
-        placeholder="请输入手机号"
-      />
-      <van-field
-        v-model="user.code"
-        class="iconfont icon-bobantang"
-        label="验证码"
-        placeholder="请输入验证码"
-      >
-        <van-button
-          slot="button"
-          size="small"
-          type="primary"
-          round
-          style="background-color:red;border:0"
-        >发送验证码</van-button>
-      </van-field>
-    </van-cell-group>
+    <!-- 表单验证 -->
+    <!-- 1 使用ValidationObserver 组件把需要验证的整个表单包起来 ，例如form -->
+    <!-- 2 使用ValidationProvider 把需要校验的具体表单元素包起来，例如 input -->
+    <!-- 3、通过 ValidationProvider 配置具体的校验规则 -->
+    <!--
+         name   配置字段的提示名称
+         rules  配置校验规则
+          内置的规则：https://logaretm.github.io/vee-validate/guide/rules.html#rules
+          自定义规则：
+          单个验证规则：rules="required"
+          多个验证规则：rules="required|length:4"
+         v-slot="{ errors }" 获取校验失败的错误提示消息
+    -->
+
+    <ValidationObserver ref="form">
+      <ValidationProvider name="手机号" rules="required" immediate>
+        <!-- 绑定数据 -->
+        <van-field
+          v-model="user.mobile"
+          class="iconfont icon-smartphone"
+          clearable
+          placeholder="请输入手机号"
+        />
+      </ValidationProvider>
+      <ValidationProvider name="验证码" rules="required" immediate>
+        <van-field v-model="user.code" class="iconfont icon-bobantang" placeholder="请输入验证码">
+          <van-count-down
+            v-if="isCountDownShow"
+            slot="button"
+            :time="1000*60"
+            format="ss 秒"
+            @finish="isCountDownShow = false"
+          />
+          <van-button
+            v-else
+            slot="button"
+            size="small"
+            type="primary"
+            round
+            @click="onSendSmsCode"
+            style="background-color:red;border:0"
+          >发送验证码</van-button>
+        </van-field>
+      </ValidationProvider>
+    </ValidationObserver>
 
     <!-- 登录按钮 -->
     <div class="login-btn">
@@ -38,7 +59,7 @@
 </template>
 
 <script>
-import request from '@/utils/request' // 调用基础路径
+import { login, getSmsCode } from '@/api/user' // 调用基础路径
 
 export default {
   name: 'LoginPage',
@@ -51,7 +72,8 @@ export default {
         // 请求体
         mobile: '', // 手机号
         code: '' // 验证码
-      }
+      },
+      isCountDownShow: false // 是否显示倒计时
     }
   },
   computed: {},
@@ -62,19 +84,61 @@ export default {
     async onLogin () {
       // 1 获取表单数据
       const user = this.user
-      // 请求登录
-      const res = await request({
-        // 返回响应对象
-        method: 'POST',
-        url: '/app/v1_0/authorizations',
-        headers: {
-          // axios 会自动添加请求头
-          //   'Content-Type':'application/json'//特殊符号需要加引号
-        }, // 请求头参数
-        //   params:{}, //查询参数
-        data: user // 请求体
+      // 2 表单验证
+      // this.$refs.form.validate().then(success => {
+      //   if (!success) {
+
+      //   }
+      // })
+      const success = await this.$refs.form.validate()
+      if (!success) {
+        console.log('表单验证失败')
+        // 注意：如果你需要在 JS 验证中能马上获取到错误消息
+        // 必须给每一个 ValidationProvider 配置 immediate 初始验证
+        const errors = this.$refs.form.errors
+        for (let key in errors) {
+          const item = errors[key]
+          if (item[0]) {
+            this.$toast(item[0])
+            // 找到第1个有错误的消息，给出提示，停止遍历
+            return
+          }
+        }
+        // 获取验证失败的错误消息，轻提示
+        return
+      }
+      // 开启登录提示
+      this.$toast.loading({
+        duration: 0, // 持续时间，0表示持续展示不停止
+        forbidClick: true, // 是否禁止背景点击
+        message: '登录中...' // 提示消息
       })
-      console.log(res)
+      // 3 请求登录
+      try {
+        const res = await login(user)
+        console.log(res)
+        // 提示登录成功
+        this.$toast.success('登录成功')
+      } catch (err) {
+        console.log('登录失败', err)
+        // 提示登录失败
+        this.$toast.fail('登录失败')
+      }
+    },
+    async onSendSmsCode () {
+      try {
+        const { mobile } = this.user
+        // 1 获取手机号，效验手机号是否有效
+        // 2 请求发送验证码
+        const res = await getSmsCode(mobile)
+        console.log(res)
+
+        // 3 显示倒计时
+        this.isCountDownShow = true
+      } catch (err) {
+        console.log(err)
+        this.$toast('请勿频繁操作')
+      }
     }
   }
 }
@@ -89,5 +153,8 @@ export default {
       background-color: pink;
     }
   }
+}
+.van-cell {
+  align-items: center;
 }
 </style>
