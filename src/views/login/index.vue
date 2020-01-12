@@ -19,7 +19,7 @@
     -->
 
     <ValidationObserver ref="form">
-      <ValidationProvider name="手机号" rules="required" immediate>
+      <ValidationProvider name="手机号" rules="required|mobile" immediate>
         <!-- 绑定数据 -->
         <van-field
           v-model="user.mobile"
@@ -28,7 +28,7 @@
           placeholder="请输入手机号"
         />
       </ValidationProvider>
-      <ValidationProvider name="验证码" rules="required" immediate>
+      <ValidationProvider name="验证码" rules="required|code" immediate>
         <van-field v-model="user.code" class="iconfont icon-bobantang" placeholder="请输入验证码">
           <van-count-down
             v-if="isCountDownShow"
@@ -60,7 +60,7 @@
 
 <script>
 import { login, getSmsCode } from '@/api/user' // 调用基础路径
-
+import { validate } from 'vee-validate'
 export default {
   name: 'LoginPage',
   components: {},
@@ -115,20 +115,28 @@ export default {
       })
       // 3 请求登录
       try {
-        const res = await login(user)
-        console.log(res)
+        const { data } = await login(user)
+        // 将登录成功获取到的用户 token 相关数据存储到 Vuex 容器
+        this.$store.commit('setUser', data.data)
         // 提示登录成功
         this.$toast.success('登录成功')
       } catch (err) {
         console.log('登录失败', err)
         // 提示登录失败
-        this.$toast.fail('登录失败')
+        this.$toast.fail('登录失败,手机号或验证码不正确')
       }
     },
     async onSendSmsCode () {
       try {
         const { mobile } = this.user
         // 1 获取手机号，效验手机号是否有效
+        const validateResult = await validate(mobile, 'required|mobile', {
+          name: '手机号'
+        })
+        if (!validateResult.valid) {
+          this.$toast(validateResult.errors[0])
+          return
+        }
         // 2 请求发送验证码
         const res = await getSmsCode(mobile)
         console.log(res)
