@@ -26,3 +26,22 @@ export const getSmsCode = mobile => {
     url: `/app/v1_0/sms/codes/${mobile}`
   })
 }
+/**
+ * 获取当前登录用户个人信息
+ */
+export const getUserInfo = () => {
+  return request({
+    method: 'GET',
+    url: '/app/v1_0/user'
+  })
+}
+
+/**
+ * 获取指定用户个人信息
+ */
+export const getUserById = userId => {
+  return request({
+    method: 'GET',
+    url: `/app/v1_0/users/${userId}`
+  })
+}

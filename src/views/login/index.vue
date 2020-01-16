@@ -70,8 +70,8 @@ export default {
       user: {
         // 集中放在一个对象里面
         // 请求体
-        mobile: '', // 手机号
-        code: '' // 验证码
+        mobile: '13911111111', // 手机号
+        code: '246810' // 验证码
       },
       isCountDownShow: false // 是否显示倒计时
     }
@@ -120,6 +120,8 @@ export default {
         this.$store.commit('setUser', data.data)
         // 提示登录成功
         this.$toast.success('登录成功')
+        // 跳转到首页
+        this.$router.push(`/my`)
       } catch (err) {
         console.log('登录失败', err)
         // 提示登录失败
